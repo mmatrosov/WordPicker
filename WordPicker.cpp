@@ -2,6 +2,41 @@
 
 using namespace std;
 
+vector<wstring> words;
+
+vector<wstring> ReadWords()
+{
+  wifstream input("data\\freqrnc2011.csv");
+
+  if (!input)
+  {
+    wcerr << L"Не найден файл со словарём \"data\freqrnc2011.csv\"!" << endl;    
+    throw runtime_error("dictionary not found");
+  }
+
+  // An instance of codecvt is deleted by the locale object. 
+  locale utf8(locale::empty(), new codecvt_utf8<wchar_t>);
+  input.imbue(utf8);
+
+  vector<wstring> words;
+
+//  wregex mask(L"^:Al*\ts\t:n");
+  wregex mask(L"\ts\t([0-9]+\\.[0-9]+)");
+  wsmatch mr; 
+
+  wstring word;
+
+  while (getline(input, word))
+  {
+    if (regex_search(word, mr, mask))
+    {
+      words.push_back(move(word));
+    }
+  }
+
+  return words;
+}
+
 int _tmain(int argc, _TCHAR* argv[])
 {
   // Set locale to old school cp866 used for console IO
@@ -9,65 +44,12 @@ int _tmain(int argc, _TCHAR* argv[])
 
   if (argc < 2)
   {
-    wcout << L"Введите регулярное выражения слова в качестве единственного параметра." << endl;
+    wcerr << L"Введите регулярное выражения слова в качестве единственного параметра." << endl;
     return 1;
   }
 
-  wstring maskStr(argv[1]);
-
-  wregex mask(maskStr, std::regex_constants::icase);
-
-  // Open file as unicode stream
-  wifstream ifile("ru_RU.dic");
-  
-  if (!ifile)
-  {
-    wcout << L"В рабочей директории должен находиться файл ru_RU.dic в кодировке KOI8-R." << endl;
-    return 1;
-  }
-
-  // Set locale to KOI8-R
-  locale koi8r("Russian_Russia.20866");
-  ifile.imbue(koi8r);
-
-  wstring word;
-
-  std::vector<wstring> words;
-
-  // Search through dictionary
-  while (getline(ifile, word))
-  {
-    // Skip proper nouns, they begin with capital letter
-    if (iswupper(word[0]))
-    {
-      continue;
-    }
-
-    size_t pos = word.find('/');
-
-    // Trim meta information coming after slash sign
-    if (pos != wstring::npos)
-    {
-      word.erase(pos);
-    }
-
-    // Check match against specified mask
-    if (regex_match(word, mask))
-    {
-      words.push_back(std::move(word));
-    }
-  }
-
-  sort(words.begin(), words.end(), [] (const wstring& a, const wstring& b)
-  { 
-    if (a.size() != b.size()) return a.size() < b.size(); 
-    return a < b;
-  });
-
-  for (const auto& word : words)
-  {
-    wcout << word << std::endl;
-  }
+  // Initialize words list
+  words = ReadWords();
 
 	return 0;
 }
