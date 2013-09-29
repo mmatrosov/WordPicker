@@ -75,6 +75,15 @@ void MatchPatterns(const vector<wstring>& in_Words)
 
   cout << endl;
 
+  wcout << L"Списки слов для мнемонического запоминания цифр через согласные:" << endl;
+  
+  for (int i = 0; i < count; ++i)
+  {
+    wcout << i << ": " << digits[i] << endl;
+  }
+
+  cout << endl;
+
   for (int i = 0; i < count; ++i)
   {
     for (int j = 0; j < count; ++j)
@@ -96,7 +105,6 @@ void MatchPatterns(const vector<wstring>& in_Words)
       cout << endl;
     }
   }
-
 }
 
 //////////////////////////////////////////////////////////////////////////
