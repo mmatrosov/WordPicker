@@ -2,54 +2,83 @@
 
 using namespace std;
 
-vector<wstring> words;
-
+//////////////////////////////////////////////////////////////////////////
+///
 vector<wstring> ReadWords()
 {
-  wifstream input("data\\freqrnc2011.csv");
+#ifdef _DEBUG
+  string dictPath = R"(data\freqrnc2011_crop.csv)";
+#else
+  string dictPath = R"(data\freqrnc2011.csv)";
+#endif
+
+  wifstream input(dictPath);
 
   if (!input)
   {
-    wcerr << L"Не найден файл со словарём \"data\freqrnc2011.csv\"!" << endl;    
+    cerr << "Dictionary not found in \"" + dictPath + "\"!" << endl;
     throw runtime_error("dictionary not found");
   }
+
+  cout << "Reading dictionary..." << endl;
 
   // An instance of codecvt is deleted by the locale object. 
   locale utf8(locale::empty(), new codecvt_utf8<wchar_t>);
   input.imbue(utf8);
 
-  vector<wstring> words;
+  // Store frequency as a first field to use standard sorting order
+  typedef pair<double, wstring> Cell;
 
-//  wregex mask(L"^:Al*\ts\t:n");
-  wregex mask(L"\ts\t([0-9]+\\.[0-9]+)");
+  vector<Cell> table;
+
+  wregex mask(LR"(^(.+)\ts\t([0-9]+\.[0-9]+).*)");
   wsmatch mr; 
 
-  wstring word;
+  wstring line;
 
-  while (getline(input, word))
+  while (getline(input, line))
   {
-    if (regex_search(word, mr, mask))
+    if (regex_match(line, mr, mask))
     {
-      words.push_back(move(word));
+      wstring word = mr[1].str();
+      double freq = boost::lexical_cast<double>(mr[2].str());
+      table.push_back(make_pair(freq, move(word)));
     }
   }
+
+  // Sort words by descending frequency
+  sort(table.begin(), table.end(), greater<>());
+
+  vector<wstring> words(table.size());
+
+  transform(table.begin(), table.end(), words.begin(), 
+    [](const Cell& cell) { return move(cell.second); });
 
   return words;
 }
 
+//////////////////////////////////////////////////////////////////////////
+///
+void MatchPatterns(const vector<wstring>& in_Words)
+{
+
+}
+
+//////////////////////////////////////////////////////////////////////////
+///
 int _tmain(int argc, _TCHAR* argv[])
 {
-  // Set locale to old school cp866 used for console IO
-  setlocale(LC_ALL, "Russian_Russia.866");
-
-  if (argc < 2)
+  try
   {
-    wcerr << L"Введите регулярное выражения слова в качестве единственного параметра." << endl;
+    // Initialize words list
+    auto words = ReadWords();
+
+
+  }
+  catch (std::exception&)
+  {
     return 1;
   }
-
-  // Initialize words list
-  words = ReadWords();
 
 	return 0;
 }
