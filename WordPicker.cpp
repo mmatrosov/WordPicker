@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 
 using namespace std;
 
@@ -21,6 +21,8 @@ vector<wstring> ReadWords()
   }
 
   cout << "Reading dictionary..." << endl;
+
+  auto start = chrono::steady_clock::now();
 
   // An instance of codecvt is deleted by the locale object. 
   locale utf8(locale::empty(), new codecvt_utf8<wchar_t>);
@@ -54,6 +56,11 @@ vector<wstring> ReadWords()
   transform(table.begin(), table.end(), words.begin(), 
     [](const Cell& cell) { return move(cell.second); });
 
+  auto finish = chrono::steady_clock::now();
+
+  cout << "Done " << words.size() << " words in " << 
+    chrono::duration_cast<chrono::milliseconds>(finish - start).count() << "ms" << endl;
+
   return words;
 }
 
@@ -61,6 +68,34 @@ vector<wstring> ReadWords()
 ///
 void MatchPatterns(const vector<wstring>& in_Words)
 {
+  static const vector<wstring> digits = { L"н", L"к", L"л", L"т", L"ч", L"п", L"[шщ]", L"с", L"в", L"д" };
+  static const int count = digits.size();
+
+  static const wstring vowels = L"[аеёиоуыэюя]";
+
+  cout << endl;
+
+  for (int i = 0; i < count; ++i)
+  {
+    for (int j = 0; j < count; ++j)
+    {
+      cout << "-------------------------------------------------------------------------------" << endl;
+      wcout << i << j << L" - " << digits[i] << digits[j] << ":" << endl;
+
+      // Words with first two consonant letters equal to selected
+      wregex mask(vowels + L"*" + digits[i] + vowels + L"*" + digits[j] + L".*");
+
+      for (const auto& word : in_Words)
+      {
+        if (regex_match(word, mask))
+        {
+          wcout << word << endl;
+        }
+      }
+
+      cout << endl;
+    }
+  }
 
 }
 
@@ -68,12 +103,15 @@ void MatchPatterns(const vector<wstring>& in_Words)
 ///
 int _tmain(int argc, _TCHAR* argv[])
 {
+  // Set locale to old school cp866 used for console IO
+  setlocale(LC_ALL, "Russian_Russia.866");
+
   try
   {
     // Initialize words list
     auto words = ReadWords();
 
-
+    MatchPatterns(words);
   }
   catch (std::exception&)
   {
