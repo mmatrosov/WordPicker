@@ -2,9 +2,14 @@
 
 using namespace std;
 
+enum class DictType
+{
+  Freq, OpenOffice
+};
+
 //////////////////////////////////////////////////////////////////////////
 ///
-vector<wstring> ReadWords()
+vector<wstring> ReadWordsFreq()
 {
 #ifdef _DEBUG
   string dictPath = R"(data\freqrnc2011_crop.csv)";
@@ -19,10 +24,6 @@ vector<wstring> ReadWords()
     cerr << "Dictionary not found in \"" + dictPath + "\"!" << endl;
     throw runtime_error("dictionary not found");
   }
-
-  cout << "Reading dictionary..." << endl;
-
-  auto start = chrono::steady_clock::now();
 
   // An instance of codecvt is deleted by the locale object. 
   locale utf8(locale::empty(), new codecvt_utf8<wchar_t>);
@@ -56,9 +57,73 @@ vector<wstring> ReadWords()
   transform(table.begin(), table.end(), words.begin(), 
     [](const Cell& cell) { return move(cell.second); });
 
+  return words;
+}
+
+//////////////////////////////////////////////////////////////////////////
+///
+vector<wstring> ReadWordsOpenOffice()
+{
+#ifdef _DEBUG
+  string dictPath = R"(data\ru_RU_crop.dic)";
+#else
+  string dictPath = R"(data\ru_RU.dic)";
+#endif
+
+  wifstream input(dictPath);
+
+  if (!input)
+  {
+    cerr << "Dictionary not found in \"" + dictPath + "\"!" << endl;
+    throw runtime_error("dictionary not found");
+  }
+
+  // An instance of codecvt is deleted by the locale object. 
+  locale utf8(locale::empty(), new codecvt_utf8<wchar_t>);
+  input.imbue(utf8);
+
+  vector<wstring> words;
+
+  wregex mask(L"([а-я]+)(/.*)?");
+  wsmatch mr;
+
+  wstring line;
+
+  while (getline(input, line))
+  {
+    if (regex_match(line, mr, mask))
+    {
+      wstring word = mr[1].str();
+      words.push_back(move(word));
+    }
+  }
+
+  return words;
+}
+
+vector<wstring> ReadWords(DictType type)
+{
+  vector<wstring> words;
+
+  cout << "Reading dictionary..." << endl;
+
+  auto start = chrono::steady_clock::now();
+
+  switch (type)
+  {
+  case DictType::Freq:
+    words = ReadWordsFreq();
+    break;
+  case DictType::OpenOffice:
+    words = ReadWordsOpenOffice();
+    break;
+  default:
+    throw logic_error("Unknown dictionary type!");
+  }
+
   auto finish = chrono::steady_clock::now();
 
-  cout << "Done " << words.size() << " words in " << 
+  cout << "Done " << words.size() << " words in " <<
     chrono::duration_cast<chrono::milliseconds>(finish - start).count() << "ms" << endl;
 
   return words;
@@ -117,7 +182,7 @@ int _tmain(int argc, _TCHAR* argv[])
   try
   {
     // Initialize words list
-    auto words = ReadWords();
+    auto words = ReadWords(DictType::OpenOffice);
 
     MatchPatterns(words);
   }
