@@ -131,7 +131,7 @@ vector<wstring> ReadWords(DictType type)
 
 //////////////////////////////////////////////////////////////////////////
 ///
-void MatchPatterns(const vector<wstring>& in_Words)
+void FindWordNumberPatterns(const vector<wstring>& in_words)
 {
   static const vector<wstring> digits = { L"н", L"к", L"л", L"т", L"ч", L"п", L"[шщ]", L"с", L"в", L"д" };
   static const int count = digits.size();
@@ -159,7 +159,7 @@ void MatchPatterns(const vector<wstring>& in_Words)
       // Words with first two consonant letters equal to selected
       wregex mask(vowels + L"*" + digits[i] + vowels + L"*" + digits[j] + L".*");
 
-      for (const auto& word : in_Words)
+      for (const auto& word : in_words)
       {
         if (regex_match(word, mask))
         {
@@ -168,6 +168,24 @@ void MatchPatterns(const vector<wstring>& in_Words)
       }
 
       cout << endl;
+    }
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////
+///
+void MatchPattern(const vector<wstring>& in_words, const std::wstring& in_str)
+{
+  // Words with first two consonant letters equal to selected
+  wregex mask(in_str);
+
+  wcout << L"Слова по регулярному выражению \"" << in_str << L"\":" << endl;
+
+  for (const auto& word : in_words)
+  {
+    if (regex_match(word, mask))
+    {
+      wcout << word << endl;
     }
   }
 }
@@ -184,7 +202,14 @@ int _tmain(int argc, _TCHAR* argv[])
     // Initialize words list
     auto words = ReadWords(DictType::OpenOffice);
 
-    MatchPatterns(words);
+    if (argc < 2)
+    {
+      FindWordNumberPatterns(words);
+    }
+    else
+    {
+      MatchPattern(words, argv[1]);
+    }
   }
   catch (std::exception&)
   {
